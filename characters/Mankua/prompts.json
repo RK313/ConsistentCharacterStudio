@@ -1,0 +1,36 @@
+{
+  "poses": {
+    "standing": {
+      "instruction": "Mankua is standing naturally."
+    },
+    "walking": {
+      "instruction": "Mankua is taking one small step forward with his left foot. Both arms swing naturally."
+    },
+    "waving": {
+      "instruction": "Raise Mankua's right hand into a friendly wave toward the camera."
+    },
+    "running": {
+      "instruction": "Mankua is happily running toward the camera."
+    }
+  },
+
+  "objects": {
+    "banana": {
+      "instruction": "Mankua is standing naturally while holding a ripe yellow banana in his left hand close to his chest. He is smiling gently toward the camera."
+    }
+  },
+
+  "expressions": {
+    "thinking": {
+      "instruction": "Mankua is touching his chin while thinking."
+    },
+
+    "laughing": {
+      "instruction": "Mankua is laughing joyfully with a wide natural smile, bright sparkling eyes, slightly raised cheeks, and a cheerful happy expression. His body posture remains relaxed and natural."
+    },
+	
+	"surprised": {
+	  "instruction": "Mankua looks pleasantly surprised with slightly raised eyebrows, wide curious eyes, and a small rounded open mouth. Both hands are raised slightly near his chest in a natural surprised gesture. His body posture remains relaxed and balanced."
+}
+  }
+}

@@ -1,0 +1,10 @@
+{
+    "name": "Mankua",
+    "master": "master.png",
+    "workflow": "workflow/flux_kontext_api.json",
+
+    "nodes": {
+        "image": "190",
+        "prompt": "192:6"
+    }
+}

@@ -1,0 +1,40 @@
+{
+  "poses": {
+    "standing": {
+      "file": "poses/Standing.png",
+      "status": "approved"
+    },
+    "walking": {
+      "file": "poses/Walking.png",
+      "status": "approved"
+    },
+    "waving": {
+      "file": "poses/Waving.png",
+      "status": "approved"
+    },
+    "running": {
+      "file": "poses/Running.png",
+      "status": "approved"
+    }
+  },
+
+  "expressions": {
+    "thinking": {
+      "file": "expressions/Thinking.png",
+      "status": "approved"
+    },
+    "laughing": {
+      "file": "expressions/Laughing.png",
+      "status": "pending"
+    }
+  },
+
+  "props": {
+    "banana": {
+      "file": "props/Banana.png",
+      "status": "approved"
+    }
+  },
+
+  "backgrounds": {}
+}

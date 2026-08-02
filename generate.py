@@ -1,0 +1,362 @@
+import json
+import shutil
+import sys
+import time
+import uuid
+from pathlib import Path
+
+import requests
+
+
+# ==========================================================
+# Configuration
+# ==========================================================
+
+COMFYUI_URL = "http://127.0.0.1:8188"
+
+COMFY_OUTPUT = Path(r"D:\AI\ComfyUI\ComfyUI\output")
+
+IMAGE_NODE = "190"
+PROMPT_NODE = "192:6"
+
+
+# ==========================================================
+# Prompt Template
+# ==========================================================
+
+PROMPT_TEMPLATE = """
+Edit only the body pose.
+
+{instruction}
+
+Keep the original face unchanged.
+
+Keep the original gentle closed smile unchanged.
+
+Do not change the eyes, ears, nose, mouth,
+hair tuft, fur color, body proportions,
+tail, lighting, background or camera angle.
+
+Do not change the character identity.
+"""
+
+
+# ==========================================================
+# Character Paths
+# ==========================================================
+
+BASE_DIR = Path(__file__).parent
+COMFY_INPUT = Path(r"D:\AI\ComfyUI\ComfyUI\input")
+
+def get_character_paths(character):
+
+    char_dir = BASE_DIR / "characters" / character
+
+    return {
+
+        "character": character,
+
+        "root": char_dir,
+
+        "workflow":
+            char_dir /
+            "workflow" /
+            "flux_kontext_api.json",
+
+        "prompts":
+            char_dir /
+            "prompts.json",
+
+        "master":
+            char_dir /
+            "master.png",
+
+        "output":
+            char_dir /
+            "output"
+
+    }
+
+
+# ==========================================================
+# Helpers
+# ==========================================================
+
+def load_json(file):
+
+    with open(file, "r", encoding="utf-8") as f:
+
+        return json.load(f)
+
+
+def load_workflow(paths):
+
+    return load_json(paths["workflow"])
+
+
+def load_prompts(paths):
+
+    return load_json(paths["prompts"])
+
+
+def build_prompt(instruction):
+
+    return PROMPT_TEMPLATE.format(
+        instruction=instruction
+    )
+
+
+def get_instruction(prompts, pose):
+
+    pose = pose.lower()
+
+    for section in [
+        "poses",
+        "objects",
+        "expressions"
+    ]:
+
+        if section not in prompts:
+            continue
+
+        if pose in prompts[section]:
+
+            return prompts[section][pose]["instruction"]
+
+    return None
+
+# ==========================================================
+# Image Preparation
+# ==========================================================
+
+def prepare_master_image(paths):
+
+    COMFY_INPUT.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    destination = COMFY_INPUT / paths["master"].name
+
+    shutil.copy2(
+        paths["master"],
+        destination
+    )
+
+    return destination.name
+
+# ==========================================================
+# ComfyUI API
+# ==========================================================
+
+def submit_prompt(workflow):
+
+    payload = {
+        "prompt": workflow,
+        "client_id": str(uuid.uuid4())
+    }
+
+    response = requests.post(
+        COMFYUI_URL + "/prompt",
+        json=payload,
+        timeout=30
+    )
+
+    print("Status :", response.status_code)
+    print(response.text)
+
+    response.raise_for_status()
+
+    return response.json()["prompt_id"]
+
+def is_finished(prompt_id):
+
+    try:
+
+        response = requests.get(
+            COMFYUI_URL + "/history",
+            timeout=10
+        )
+
+        response.raise_for_status()
+
+        history = response.json()
+
+        return prompt_id in history
+
+    except Exception:
+
+        return False
+
+
+def wait_for_completion(prompt_id):
+
+    print("\nWaiting for ComfyUI...\n")
+
+    start = time.time()
+
+    while True:
+
+        if is_finished(prompt_id):
+
+            elapsed = int(time.time() - start)
+
+            print(f"\nCompleted in {elapsed} seconds.\n")
+
+            return
+
+        print(".", end="", flush=True)
+
+        time.sleep(3)
+
+
+# ==========================================================
+# Output Management
+# ==========================================================
+
+def newest_output_image():
+
+    files = list(COMFY_OUTPUT.glob("*.png"))
+
+    if not files:
+        return None
+
+    files.sort(
+        key=lambda x: x.stat().st_mtime,
+        reverse=True
+    )
+
+    return files[0]
+
+
+def next_filename(output_dir, pose):
+
+    pose = pose.capitalize()
+
+    target = output_dir / f"{pose}.png"
+
+    if not target.exists():
+        return target
+
+    index = 2
+
+    while True:
+
+        candidate = output_dir / f"{pose}_v{index}.png"
+
+        if not candidate.exists():
+            return candidate
+
+        index += 1
+
+
+def copy_output(paths, pose):
+
+    latest = newest_output_image()
+
+    if latest is None:
+
+        print("No output image found.")
+
+        return
+
+    paths["output"].mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    destination = next_filename(
+        paths["output"],
+        pose
+    )
+
+    shutil.copy2(
+        latest,
+        destination
+    )
+
+    print("\nImage copied to:\n")
+    print(destination)
+
+# ==========================================================
+# Main
+# ==========================================================
+
+def generate(character, pose):
+
+    paths = get_character_paths(character)
+
+    if not paths["workflow"].exists():
+        print(f"\nWorkflow not found:\n{paths['workflow']}")
+        return
+
+    if not paths["prompts"].exists():
+        print(f"\nPrompts not found:\n{paths['prompts']}")
+        return
+
+    if not paths["master"].exists():
+        print(f"\nMaster image not found:\n{paths['master']}")
+        return
+
+    workflow = load_workflow(paths)
+
+    prompts = load_prompts(paths)
+
+    instruction = get_instruction(prompts, pose)
+
+    if instruction is None:
+        print(f"\nUnknown pose/expression/object : {pose}")
+        return
+
+    image_name = prepare_master_image(paths)
+
+    workflow[IMAGE_NODE]["inputs"]["image"] = image_name
+
+    workflow[PROMPT_NODE]["inputs"]["text"] = build_prompt(
+        instruction
+    )
+
+    print("\n====================================")
+    print("Character :", character)
+    print("Pose      :", pose)
+    print("====================================\n")
+
+    prompt_id = submit_prompt(workflow)
+
+    print("Prompt Submitted")
+    print("Prompt ID :", prompt_id)
+
+    wait_for_completion(prompt_id)
+
+    copy_output(paths, pose)
+
+    print("\nDone.\n")
+
+
+# ==========================================================
+# Entry
+# ==========================================================
+
+def usage():
+
+    print("\nCharacterStudio\n")
+    print("Usage:\n")
+    print("python generate.py <Character> <Pose>\n")
+    print("Examples\n")
+    print("python generate.py Mankua walking")
+    print("python generate.py Mankua waving")
+    print("python generate.py Mankua running")
+    print("python generate.py Mankua banana")
+    print("")
+
+
+if __name__ == "__main__":
+
+    if len(sys.argv) != 3:
+        usage()
+        sys.exit(0)
+
+    character = sys.argv[1]
+    pose = sys.argv[2]
+
+    generate(character, pose)
