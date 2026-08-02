@@ -1,7 +1,21 @@
 {
     "name": "Mankua",
-    "master": "master.png",
+
+    "description": "Friendly baby monkey",
+
+    "master_image": "master.png",
+
     "workflow": "workflow/flux_kontext_api.json",
+
+    "style": "Flux Kontext",
+
+    "comfyui": {
+        "url": "http://127.0.0.1:8188",
+
+        "input": "D:/AI/ComfyUI/ComfyUI/input",
+
+        "output": "D:/AI/ComfyUI/ComfyUI/output"
+    },
 
     "nodes": {
         "image": "190",

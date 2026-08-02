@@ -8,17 +8,6 @@ from pathlib import Path
 import requests
 
 
-# ==========================================================
-# Configuration
-# ==========================================================
-
-COMFYUI_URL = "http://127.0.0.1:8188"
-
-COMFY_OUTPUT = Path(r"D:\AI\ComfyUI\ComfyUI\output")
-
-IMAGE_NODE = "190"
-PROMPT_NODE = "192:6"
-
 
 # ==========================================================
 # Prompt Template
@@ -46,13 +35,29 @@ Do not change the character identity.
 # ==========================================================
 
 BASE_DIR = Path(__file__).parent
-COMFY_INPUT = Path(r"D:\AI\ComfyUI\ComfyUI\input")
+
+def load_character(character):
+
+    character_file = (
+        BASE_DIR /
+        "characters" /
+        character /
+        "character.json"
+    )
+
+    with open(character_file, "r", encoding="utf-8") as f:
+
+        return json.load(f)
 
 def get_character_paths(character):
+
+    config = load_character(character)
 
     char_dir = BASE_DIR / "characters" / character
 
     return {
+
+        "config": config,
 
         "character": character,
 
@@ -60,8 +65,7 @@ def get_character_paths(character):
 
         "workflow":
             char_dir /
-            "workflow" /
-            "flux_kontext_api.json",
+            config["workflow"],
 
         "prompts":
             char_dir /
@@ -69,15 +73,13 @@ def get_character_paths(character):
 
         "master":
             char_dir /
-            "master.png",
+            config["master_image"],
 
         "output":
             char_dir /
             "output"
 
     }
-
-
 # ==========================================================
 # Helpers
 # ==========================================================
@@ -131,12 +133,15 @@ def get_instruction(prompts, pose):
 
 def prepare_master_image(paths):
 
-    COMFY_INPUT.mkdir(
+    comfy_input = Path(
+        paths["config"]["comfyui"]["input"]
+    )
+
+    comfy_input.mkdir(
         parents=True,
         exist_ok=True
     )
-
-    destination = COMFY_INPUT / paths["master"].name
+    destination = comfy_input / paths["master"].name
 
     shutil.copy2(
         paths["master"],
@@ -149,7 +154,7 @@ def prepare_master_image(paths):
 # ComfyUI API
 # ==========================================================
 
-def submit_prompt(workflow):
+def submit_prompt(workflow, paths):
 
     payload = {
         "prompt": workflow,
@@ -157,7 +162,7 @@ def submit_prompt(workflow):
     }
 
     response = requests.post(
-        COMFYUI_URL + "/prompt",
+        paths["config"]["comfyui"]["url"] + "/prompt",
         json=payload,
         timeout=30
     )
@@ -169,12 +174,12 @@ def submit_prompt(workflow):
 
     return response.json()["prompt_id"]
 
-def is_finished(prompt_id):
+def is_finished(prompt_id, paths):
 
     try:
 
         response = requests.get(
-            COMFYUI_URL + "/history",
+            paths["config"]["comfyui"]["url"] + "/history",
             timeout=10
         )
 
@@ -189,7 +194,7 @@ def is_finished(prompt_id):
         return False
 
 
-def wait_for_completion(prompt_id):
+def wait_for_completion(prompt_id, paths):
 
     print("\nWaiting for ComfyUI...\n")
 
@@ -197,7 +202,7 @@ def wait_for_completion(prompt_id):
 
     while True:
 
-        if is_finished(prompt_id):
+        if is_finished(prompt_id, paths):
 
             elapsed = int(time.time() - start)
 
@@ -214,9 +219,15 @@ def wait_for_completion(prompt_id):
 # Output Management
 # ==========================================================
 
-def newest_output_image():
+def newest_output_image(paths):
 
-    files = list(COMFY_OUTPUT.glob("*.png"))
+    comfy_output = Path(
+        paths["config"]["comfyui"]["output"]
+    )
+
+    files = list(
+        comfy_output.glob("*.png")
+    )
 
     if not files:
         return None
@@ -227,7 +238,6 @@ def newest_output_image():
     )
 
     return files[0]
-
 
 def next_filename(output_dir, pose):
 
@@ -252,7 +262,7 @@ def next_filename(output_dir, pose):
 
 def copy_output(paths, pose):
 
-    latest = newest_output_image()
+    latest = newest_output_image(paths)
 
     if latest is None:
 
@@ -310,9 +320,11 @@ def generate(character, pose):
 
     image_name = prepare_master_image(paths)
 
-    workflow[IMAGE_NODE]["inputs"]["image"] = image_name
+    workflow[paths["config"]["nodes"]["image"]]["inputs"]["image"] = image_name
 
-    workflow[PROMPT_NODE]["inputs"]["text"] = build_prompt(
+    workflow[
+        paths["config"]["nodes"]["prompt"]
+    ]["inputs"]["text"] = build_prompt(
         instruction
     )
 
@@ -321,12 +333,12 @@ def generate(character, pose):
     print("Pose      :", pose)
     print("====================================\n")
 
-    prompt_id = submit_prompt(workflow)
+    prompt_id = submit_prompt(workflow, paths)
 
     print("Prompt Submitted")
     print("Prompt ID :", prompt_id)
 
-    wait_for_completion(prompt_id)
+    wait_for_completion(prompt_id, paths)
 
     copy_output(paths, pose)
 

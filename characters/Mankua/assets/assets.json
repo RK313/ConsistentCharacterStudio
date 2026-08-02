@@ -19,11 +19,21 @@
   },
 
   "expressions": {
-    "thinking": {
-      "file": "expressions/Thinking.png",
-      "status": "approved"
+      "thinking": {
+      "default": 0,
+
+      "variants": [
+        {
+          "file": "expressions/Thinking.png",
+          "status": "approved"
+        },
+        {
+          "file": "expressions/Thinking_v2.png",
+          "status": "approved"
+        }
+      ]
     },
-    "laughing": {
+	"laughing": {
       "file": "expressions/Laughing.png",
       "status": "pending"
     }
