@@ -187,12 +187,35 @@ def is_finished(prompt_id, paths):
 
         history = response.json()
 
-        return prompt_id in history
+        if prompt_id not in history:
+            return False
+
+        outputs = history[prompt_id].get(
+            "outputs",
+            {}
+        )
+
+        for node in outputs.values():
+
+            images = node.get(
+                "images",
+                []
+            )
+
+            if len(images) > 0:
+
+                filename = images[0].get(
+                    "filename"
+                )
+
+                if filename:
+                    return True
+
+        return False
 
     except Exception:
 
         return False
-
 
 def wait_for_completion(prompt_id, paths):
 
@@ -206,14 +229,61 @@ def wait_for_completion(prompt_id, paths):
 
             elapsed = int(time.time() - start)
 
-            print(f"\nCompleted in {elapsed} seconds.\n")
+            print(
+                f"\n\nCompleted in {elapsed} seconds."
+            )
 
             return
 
-        print(".", end="", flush=True)
+        elapsed = int(
+            time.time() - start
+        )
 
+        print(
+            f"\rGenerating... {elapsed:>4}s",
+            end="",
+            flush=True
+        )
         time.sleep(3)
 
+
+def get_generated_image(prompt_id, paths):
+
+    response = requests.get(
+        paths["config"]["comfyui"]["url"] + "/history",
+        timeout=30
+    )
+
+    response.raise_for_status()
+
+    history = response.json()
+
+    if prompt_id not in history:
+        return None
+
+    outputs = history[prompt_id]["outputs"]
+
+    for node in outputs.values():
+
+        if "images" not in node:
+            continue
+
+        images = node.get(
+            "images",
+            []
+        )
+
+        if not images:
+            continue
+
+        image = images[0]
+        comfy_output = Path(
+            paths["config"]["comfyui"]["output"]
+        )
+
+        return comfy_output / image["filename"]
+
+    return None
 
 # ==========================================================
 # Output Management
@@ -260,10 +330,12 @@ def next_filename(output_dir, pose):
         index += 1
 
 
-def copy_output(paths, pose):
+def copy_output(prompt_id,paths, pose):
 
-    latest = newest_output_image(paths)
-
+    latest = get_generated_image(
+        prompt_id,
+        paths
+    )
     if latest is None:
 
         print("No output image found.")
@@ -340,7 +412,7 @@ def generate(character, pose):
 
     wait_for_completion(prompt_id, paths)
 
-    copy_output(paths, pose)
+    copy_output(prompt_id, paths, pose)
 
     print("\nDone.\n")
 
