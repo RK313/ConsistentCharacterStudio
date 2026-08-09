@@ -12,26 +12,12 @@ from core.character import (
     get_character_paths,
 )
 
-# ==========================================================
-# Prompt Template
-# ==========================================================
-
-PROMPT_TEMPLATE = """
-Edit only the body pose.
-
-{instruction}
-
-Keep the original face unchanged.
-
-Keep the original gentle closed smile unchanged.
-
-Do not change the eyes, ears, nose, mouth,
-hair tuft, fur color, body proportions,
-tail, lighting, background or camera angle.
-
-Do not change the character identity.
-"""
-
+from core.prompt import (
+    load_prompts,
+    build_prompt,
+    get_instruction,
+)
+from core.utils import load_json
 
 # ==========================================================
 # Character Paths
@@ -39,96 +25,14 @@ Do not change the character identity.
 
 BASE_DIR = Path(__file__).parent
 
-def load_character(character):
-
-    character_file = (
-        BASE_DIR /
-        "characters" /
-        character /
-        "character.json"
-    )
-
-    with open(character_file, "r", encoding="utf-8") as f:
-
-        return json.load(f)
-
-def get_character_paths(character):
-
-    config = load_character(character)
-
-    char_dir = BASE_DIR / "characters" / character
-
-    return {
-
-        "config": config,
-
-        "character": character,
-
-        "root": char_dir,
-
-        "workflow":
-            char_dir /
-            config["workflow"],
-
-        "prompts":
-            char_dir /
-            "prompts.json",
-
-        "master":
-            char_dir /
-            config["master_image"],
-
-        "output":
-            char_dir /
-            "output"
-
-    }
 # ==========================================================
 # Helpers
 # ==========================================================
-
-def load_json(file):
-
-    with open(file, "r", encoding="utf-8") as f:
-
-        return json.load(f)
-
 
 def load_workflow(paths):
 
     return load_json(paths["workflow"])
 
-
-def load_prompts(paths):
-
-    return load_json(paths["prompts"])
-
-
-def build_prompt(instruction):
-
-    return PROMPT_TEMPLATE.format(
-        instruction=instruction
-    )
-
-
-def get_instruction(prompts, pose):
-
-    pose = pose.lower()
-
-    for section in [
-        "poses",
-        "objects",
-        "expressions"
-    ]:
-
-        if section not in prompts:
-            continue
-
-        if pose in prompts[section]:
-
-            return prompts[section][pose]["instruction"]
-
-    return None
 
 # ==========================================================
 # Image Preparation
@@ -360,7 +264,7 @@ def copy_output(prompt_id,paths, pose):
         destination
     )
 
-    print("\nImage copied to:\n")
+    print("\nImage copied to folder:\n")
     print(destination)
 
 # ==========================================================
@@ -403,10 +307,10 @@ def generate(character, pose):
         instruction
     )
 
-    print("\n====================================")
+    print("\n***====================================***")
     print("Character :", character)
     print("Pose      :", pose)
-    print("====================================\n")
+    print("***====================================***\n")
 
     prompt_id = submit_prompt(workflow, paths)
 
