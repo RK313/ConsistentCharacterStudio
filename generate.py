@@ -7,7 +7,10 @@ from pathlib import Path
 
 import requests
 
-
+from core.character import (
+    load_character,
+    get_character_paths,
+)
 
 # ==========================================================
 # Prompt Template
