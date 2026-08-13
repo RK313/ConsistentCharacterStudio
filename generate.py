@@ -19,43 +19,16 @@ from core.prompt import (
 )
 from core.utils import load_json
 
+from core.workflow import (
+    load_workflow,
+    prepare_master_image,
+)
 # ==========================================================
 # Character Paths
 # ==========================================================
 
 BASE_DIR = Path(__file__).parent
 
-# ==========================================================
-# Helpers
-# ==========================================================
-
-def load_workflow(paths):
-
-    return load_json(paths["workflow"])
-
-
-# ==========================================================
-# Image Preparation
-# ==========================================================
-
-def prepare_master_image(paths):
-
-    comfy_input = Path(
-        paths["config"]["comfyui"]["input"]
-    )
-
-    comfy_input.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-    destination = comfy_input / paths["master"].name
-
-    shutil.copy2(
-        paths["master"],
-        destination
-    )
-
-    return destination.name
 
 # ==========================================================
 # ComfyUI API
@@ -307,10 +280,10 @@ def generate(character, pose):
         instruction
     )
 
-    print("\n***====================================***")
+    print("\n*****====================================*****")
     print("Character :", character)
     print("Pose      :", pose)
-    print("***====================================***\n")
+    print("*****====================================*****\n")
 
     prompt_id = submit_prompt(workflow, paths)
 
