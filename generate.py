@@ -23,222 +23,14 @@ from core.workflow import (
     load_workflow,
     prepare_master_image,
 )
+from core import output
+from core import comfyui
 # ==========================================================
 # Character Paths
 # ==========================================================
 
 BASE_DIR = Path(__file__).parent
 
-
-# ==========================================================
-# ComfyUI API
-# ==========================================================
-
-def submit_prompt(workflow, paths):
-
-    payload = {
-        "prompt": workflow,
-        "client_id": str(uuid.uuid4())
-    }
-
-    response = requests.post(
-        paths["config"]["comfyui"]["url"] + "/prompt",
-        json=payload,
-        timeout=30
-    )
-
-    print("Status :", response.status_code)
-    print(response.text)
-
-    response.raise_for_status()
-
-    return response.json()["prompt_id"]
-
-def is_finished(prompt_id, paths):
-
-    try:
-
-        response = requests.get(
-            paths["config"]["comfyui"]["url"] + "/history",
-            timeout=10
-        )
-
-        response.raise_for_status()
-
-        history = response.json()
-
-        if prompt_id not in history:
-            return False
-
-        outputs = history[prompt_id].get(
-            "outputs",
-            {}
-        )
-
-        for node in outputs.values():
-
-            images = node.get(
-                "images",
-                []
-            )
-
-            if len(images) > 0:
-
-                filename = images[0].get(
-                    "filename"
-                )
-
-                if filename:
-                    return True
-
-        return False
-
-    except Exception:
-
-        return False
-
-def wait_for_completion(prompt_id, paths):
-
-    print("\nWaiting for ComfyUI...\n")
-
-    start = time.time()
-
-    while True:
-
-        if is_finished(prompt_id, paths):
-
-            elapsed = int(time.time() - start)
-
-            print(
-                f"\n\nCompleted in {elapsed} seconds."
-            )
-
-            return
-
-        elapsed = int(
-            time.time() - start
-        )
-
-        print(
-            f"\rGenerating... {elapsed:>4}s",
-            end="",
-            flush=True
-        )
-        time.sleep(3)
-
-
-def get_generated_image(prompt_id, paths):
-
-    response = requests.get(
-        paths["config"]["comfyui"]["url"] + "/history",
-        timeout=30
-    )
-
-    response.raise_for_status()
-
-    history = response.json()
-
-    if prompt_id not in history:
-        return None
-
-    outputs = history[prompt_id]["outputs"]
-
-    for node in outputs.values():
-
-        if "images" not in node:
-            continue
-
-        images = node.get(
-            "images",
-            []
-        )
-
-        if not images:
-            continue
-
-        image = images[0]
-        comfy_output = Path(
-            paths["config"]["comfyui"]["output"]
-        )
-
-        return comfy_output / image["filename"]
-
-    return None
-
-# ==========================================================
-# Output Management
-# ==========================================================
-
-def newest_output_image(paths):
-
-    comfy_output = Path(
-        paths["config"]["comfyui"]["output"]
-    )
-
-    files = list(
-        comfy_output.glob("*.png")
-    )
-
-    if not files:
-        return None
-
-    files.sort(
-        key=lambda x: x.stat().st_mtime,
-        reverse=True
-    )
-
-    return files[0]
-
-def next_filename(output_dir, pose):
-
-    pose = pose.capitalize()
-
-    target = output_dir / f"{pose}.png"
-
-    if not target.exists():
-        return target
-
-    index = 2
-
-    while True:
-
-        candidate = output_dir / f"{pose}_v{index}.png"
-
-        if not candidate.exists():
-            return candidate
-
-        index += 1
-
-
-def copy_output(prompt_id,paths, pose):
-
-    latest = get_generated_image(
-        prompt_id,
-        paths
-    )
-    if latest is None:
-
-        print("No output image found.")
-
-        return
-
-    paths["output"].mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    destination = next_filename(
-        paths["output"],
-        pose
-    )
-
-    shutil.copy2(
-        latest,
-        destination
-    )
-
-    print("\nImage copied to folder:\n")
-    print(destination)
 
 # ==========================================================
 # Main
@@ -285,15 +77,23 @@ def generate(character, pose):
     print("Pose      :", pose)
     print("*****====================================*****\n")
 
-    prompt_id = submit_prompt(workflow, paths)
+    prompt_id = comfyui.submit_prompt(workflow, paths)
 
     print("Prompt Submitted")
     print("Prompt ID :", prompt_id)
 
-    wait_for_completion(prompt_id, paths)
+    comfyui.wait_for_completion(prompt_id, paths)
 
-    copy_output(prompt_id, paths, pose)
+    image_path = comfyui.get_generated_image(
+        prompt_id,
+        paths
+    )
 
+    output.copy_output(
+        image_path,
+        paths,
+        pose
+    )
     print("\nDone.\n")
 
 
