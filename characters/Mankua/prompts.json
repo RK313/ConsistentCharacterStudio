@@ -12,6 +12,10 @@
     "running": {
       "instruction": "Mankua is happily running toward the camera."
     }
+	,
+    "jumping": {
+      "instruction": "Mankua is jumping in the air."
+    }
   },
 
   "objects": {
