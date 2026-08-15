@@ -1,23 +1,12 @@
-import json
-import shutil
+
 import sys
-import time
-import uuid
-from pathlib import Path
-
-import requests
-
-from core.character import (
-    load_character,
-    get_character_paths,
-)
+from core.character import get_character_paths
 
 from core.prompt import (
     load_prompts,
     build_prompt,
     get_instruction,
 )
-from core.utils import load_json
 
 from core.workflow import (
     load_workflow,
@@ -25,11 +14,6 @@ from core.workflow import (
 )
 from core import output
 from core import comfyui
-# ==========================================================
-# Character Paths
-# ==========================================================
-
-BASE_DIR = Path(__file__).parent
 
 
 # ==========================================================
