@@ -9,11 +9,29 @@ CharacterStudio is a local AI-powered character generation framework built on Co
 - Prompt library
 - Asset library
 - ComfyUI automation
+- Modular Python architecture
+- Automatic output versioning
+- Cached generation support through ComfyUI
 
-## First Character
+## Architecture
 
-🐵 Mankua
-
-## Status
-
-Version 1.0
+```text
+CharacterStudio
+│
+├── generate.py
+│
+├── core/
+│   ├── character.py
+│   ├── prompt.py
+│   ├── workflow.py
+│   ├── comfyui.py
+│   ├── output.py
+│   └── utils.py
+│
+└── characters/
+    └── Mankua/
+        ├── character.json
+        ├── prompts.json
+        ├── master.png
+        ├── assets/
+        └── workflow/
