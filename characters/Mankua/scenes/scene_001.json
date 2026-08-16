@@ -1,0 +1,18 @@
+{
+  "id": "scene_001",
+  "character": "Mankua",
+
+  "pose": "standing",
+  "expression": null,
+  "prop": null,
+  "background": null,
+
+  "camera": {
+    "shot": "medium",
+    "angle": "front"
+  },
+
+  "action": "Mankua is standing naturally and looking toward the camera.",
+
+  "duration": 5
+}
