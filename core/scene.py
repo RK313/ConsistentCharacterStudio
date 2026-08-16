@@ -137,3 +137,35 @@ def get_scene_request(scene, paths):
         "action": scene["action"],
         "duration": scene["duration"]
     }
+
+def build_scene_instruction(request):
+
+    instruction = request["instruction"]
+    action = request.get("action")
+    camera = request.get("camera")
+
+    parts = [
+        instruction
+    ]
+
+    if action:
+        parts.append(
+            f"Action: {action}"
+        )
+
+    if camera:
+        shot = camera.get("shot")
+        angle = camera.get("angle")
+
+        if shot or angle:
+            camera_text = "Camera:"
+
+            if shot:
+                camera_text += f" {shot} shot"
+
+            if angle:
+                camera_text += f", {angle} angle"
+
+            parts.append(camera_text)
+
+    return "\n\n".join(parts)
