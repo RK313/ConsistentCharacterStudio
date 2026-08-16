@@ -21,6 +21,15 @@
       "title": "Load Image"
     }
   },
+  "191": {
+    "inputs": {
+        "image": "Thinking.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+        "title": "Load Asset Image"
+    }
+  },
   "192:39": {
     "inputs": {
       "vae_name": "ae.safetensors"
@@ -131,10 +140,14 @@
       "match_image_size": true,
       "spacing_width": 0,
       "spacing_color": "white",
-      "image1": [
-        "190",
-        0
-      ]
+	  "image1": [
+		"190",
+		0
+	  ],
+	  "image2": [
+		"191",
+		0
+	  ]
     },
     "class_type": "ImageStitch",
     "_meta": {

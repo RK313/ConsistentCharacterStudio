@@ -42,6 +42,11 @@ def get_character_paths(character):
             char_dir /
             config["master_image"],
 
+        "assets":
+            char_dir /
+            "assets" /
+            "assets.json",
+
         "output":
             char_dir /
             "output"

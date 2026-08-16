@@ -17,8 +17,10 @@
         "output": "D:/AI/ComfyUI/ComfyUI/output"
     },
 
-    "nodes": {
-        "image": "190",
-        "prompt": "192:6"
-    }
+	"nodes": {
+		"image": "190",
+		"prompt": "192:6",
+		"asset_image": "191",
+		"image_stitch": "192:146"
+	}
 }

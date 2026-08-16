@@ -11,7 +11,14 @@ from core.prompt import (
 from core.workflow import (
     load_workflow,
     prepare_master_image,
+    prepare_asset_image,
+    set_asset_image,
 )
+
+from core.assets import (
+    get_reference_asset,
+)
+
 from core import output
 from core import comfyui
 
@@ -40,15 +47,36 @@ def generate(character, pose):
 
     prompts = load_prompts(paths)
 
-    instruction = get_instruction(prompts, pose)
+    instruction = get_instruction(
+        prompts,
+        pose
+    )
 
     if instruction is None:
         print(f"\nUnknown pose/expression/object : {pose}")
         return
 
-    image_name = prepare_master_image(paths)
+    asset_path = get_reference_asset(
+        paths,
+        pose
+    )
+
+    image_name = prepare_master_image(
+        paths
+    )
+
+    asset_image_name = prepare_asset_image(
+        paths,
+        asset_path
+    )
 
     workflow[paths["config"]["nodes"]["image"]]["inputs"]["image"] = image_name
+
+    set_asset_image(
+        workflow,
+        paths,
+        asset_image_name
+    )
 
     workflow[
         paths["config"]["nodes"]["prompt"]

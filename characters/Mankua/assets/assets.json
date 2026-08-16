@@ -17,11 +17,9 @@
       "status": "approved"
     }
   },
-
   "expressions": {
-      "thinking": {
+    "thinking": {
       "default": 0,
-
       "variants": [
         {
           "file": "expressions/Thinking.png",
@@ -30,21 +28,23 @@
         {
           "file": "expressions/Thinking_v2.png",
           "status": "approved"
+        },
+        {
+          "file": "expressions/Thinking_v4.png",
+          "status": "approved"
         }
       ]
     },
-	"laughing": {
+    "laughing": {
       "file": "expressions/Laughing.png",
       "status": "pending"
     }
   },
-
   "props": {
     "banana": {
       "file": "props/Banana.png",
       "status": "approved"
     }
   },
-
   "backgrounds": {}
 }
